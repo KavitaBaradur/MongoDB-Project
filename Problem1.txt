@@ -1,0 +1,91 @@
+//1
+john={'name': {'first': 'John', 'last': 'McCarthy'}}
+docjohn = db.famousPeople.findOne(john)
+docjohn._id = 100
+db.famousPeople.deleteOne(john)
+db.famousPeople.insertOne(docjohn)
+//2
+db.famousPeople.insert([
+{
+ "_id" : 20,
+ "name" : {
+ "first" : "Mary",
+ "last" : "Sally"
+ },
+ "birth" : ISODate("1933-08-27T04:00:00Z"),
+ "death" : ISODate("1984-11-07T04:00:00Z"),
+ "contribs" : [
+ "C++",
+ "Simula"
+ ],
+ "awards" : [
+ {
+ "award" : "WPI Award",
+ "year" : 1999,
+ "by" : "WPI"
+ }
+ ]
+},
+{
+ "_id" : 30,
+ "name" : {
+ "first" : "Ming",
+ "last" : "Zhang"
+ },
+ "birth" : ISODate("1911-04-12T04:00:00Z"),
+ "death" : ISODate("2000-11-07T04:00:00Z"),
+ "contribs" : [
+ "C++",
+ "FP",
+ "Python",
+ ],
+ "awards" : [
+ {
+ "award" : "WPI Award",
+ "year" : 1960,
+ "by" : "WPI"
+ },
+ {
+ "award" : "Turing Award",
+ "year" : 1960,
+ "by" : "ACM"
+ }
+ ]
+}
+])
+//3
+      $and: [
+         {"awards.award":"Turing Award"},
+	    {"awards.year":{$gt:1960}}
+      ]
+   }
+).pretty()
+//4
+db.famousPeople.aggregate([
+    {
+        "$project": {
+            firstname : "$name.first",
+            lastname : "$name.last",
+            awardCount: { $size: { "$ifNull": [ "$awards.award", [] ] } }
+         }
+    },
+    {$match: {"awardCount": {$gt : 2 }}}
+]).pretty()
+//5
+db.famousPeople.update({"name.last":"van Rossum"},{ $addToSet: { contribs: "Python" } })
+//6
+db.famousPeople.update({'name': {'first': 'Mary', 'last': 'Sally'}}, {$set : {'comments': ['taught in 3 universities', 'was an amazing pioneer', 'lived in Worcester.']}})
+//7
+contribs=db.famousPeople.findOne({'name': {'first': 'Mary', 'last': 'Sally'}}).contribs
+contribs.forEach(function(c) {printjson( {
+	'Contribution': c, 
+	'People': db.famousPeople.find({'contribs': c}).map(function(p) {return p.name})
+})})
+//8
+db.famousPeople.find({"name.first": {$regex: "^Jo.*"}}).sort({"name.last":1}).pretty()
+//Have “Jo” in first name
+db.famousPeople.find({"name.first": /Jo.*/}).sort({"name.last":1}).pretty()
+//9
+db.famousPeople.update({ _id: 30, "awards.by": "WPI"},{$set: {"awards.$.year": 1965}})
+//10
+db.famousPeople.update({_id: 30}, {$addToSet: {contribs: {$each: db.famousPeople.findOne({_id: 3}).contribs}}})

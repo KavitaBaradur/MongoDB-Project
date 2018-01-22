@@ -1,0 +1,47 @@
+//parent-referencing
+//1
+var parentID=db.parentCategories.findOne({_id: "MongoDB"}).parent;
+var output=[];
+var level=1;
+while(parentID){
+    parent=db.parentCategories.findOne({_id: parentID});
+    outputs={Name:parent._id,level:level};
+    output.push(outputs);
+    level=level+1;
+    parentID=parent.parent;
+}
+output
+
+//2
+function treeHeight(nodeId){
+var ht=0;
+var children=db.parentCategories.find({parent : nodeId});
+while(children.hasNext() === true){
+var child=children.next();
+child_ht=treeHeight(child._id);
+if(child_ht > ht){
+ht=child_ht;
+}
+}
+return ht + 1;
+}
+
+var rootN="Books";
+print(treeHeight(rootN));
+
+
+//child-referencing
+//1
+db.childCategories.find( { children: "MongoDB" } ,{children:0})
+//2
+function descendants(node) {
+    children = db.childCategories.findOne( { _id: node  } ).children
+    ans = children.slice()
+    for (var c of children ) {
+        ans = ans.concat(descendants(c))
+    }
+    return ans
+}
+descendants("Programming")
+//3
+db.childCategories.findOne( { children: "Databases" } ).children.filter(c=>c != "Databases")

@@ -1,0 +1,31 @@
+//1
+db.famousPeople1.aggregate([{$project: {_id: 0, awards: {award: 1, year: 1}}}, {$unwind: "$awards"}, {$group: {_id: "$awards.award", year: {$addToSet: "$awards.year"}}}]).forEach(printjson)
+//2
+db.famousPeople1.aggregate([{$match: {birth: {$exists: true}}}, {$group: {_id: {$year: "$birth"}, count: {$sum: 1}}}]).forEach(printjson)
+
+//3
+//print whole document
+mm=db.famousPeople1.aggregate([{$group: {_id: null, max: {$max: "$_id"}, min: {$min: "$_id"}}}]).toArray()[0]
+db.famousPeople1.findOne({'_id': mm.min})
+db.famousPeople1.findOne({'_id': mm.max})
+//minimum id and maximum id
+db.famousPeople1.aggregate(
+    [{$group: {
+            _id: {},
+            minimum_id: {$min: "$_id"},
+            maximum_id: {$max: "$_id"}
+        }    
+    },
+    {
+    $project:{
+        _id: 0,
+        minimum_id: 1,
+        maximum_id: 1
+    }
+}])
+
+//4
+out={}
+db.famousPeople1.find({$text: {$search: '"National Medal"'}}).forEach(function(d) {out[d._id] = d})
+db. famousPeople1.find({$text: {$search: 'Turing'}}).forEach(function(d) {out[d._id] = d})
+out
